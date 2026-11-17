@@ -1,5 +1,5 @@
 // ASCII Animals Screensaver: a tray app that shows the animals full-screen when you're idle.
-const { app, BrowserWindow, Tray, Menu, ipcMain, powerMonitor, screen, nativeImage } = require("electron");
+const { app, BrowserWindow, Tray, Menu, ipcMain, powerMonitor, screen, nativeImage, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { execFile } = require("child_process");
@@ -7,6 +7,9 @@ const { execFile } = require("child_process");
 const PAGE = path.join(__dirname, "app", "index.html");
 const ICON = path.join(__dirname, "app", "icons", "icon32.png");
 const IDLE_CHOICES = [1, 2, 3, 5, 10, 15, 20, 30];
+// Microsoft Store (MSIX) build: autostart is a StartupTask in the package manifest,
+// switched on/off in Windows Settings > Apps > Startup, not through the Run registry key.
+const STORE = !!process.windowsStore;
 
 /* ---------- config (idle delay etc.) ---------- */
 
@@ -166,7 +169,6 @@ function buildTray() {
 }
 
 function refreshTrayMenu() {
-  const login = app.getLoginItemSettings().openAtLogin;
   const menu = Menu.buildFromTemplate([
     { label: "Preview now", click: () => ((saverStartedAt = 0), showSaver()) },
     { label: "Choose animals & tweaks…", click: openSettings },
@@ -192,15 +194,17 @@ function refreshTrayMenu() {
         saveConfig();
       },
     },
-    {
-      label: "Start with Windows",
-      type: "checkbox",
-      checked: login,
-      click: (item) => {
-        app.setLoginItemSettings({ openAtLogin: item.checked });
-        refreshTrayMenu();
-      },
-    },
+    STORE
+      ? { label: "Start with Windows…", click: () => shell.openExternal("ms-settings:startupapps") }
+      : {
+          label: "Start with Windows",
+          type: "checkbox",
+          checked: app.getLoginItemSettings().openAtLogin,
+          click: (item) => {
+            app.setLoginItemSettings({ openAtLogin: item.checked });
+            refreshTrayMenu();
+          },
+        },
     { type: "separator" },
     { label: "Quit", click: () => app.quit() },
   ]);
@@ -233,7 +237,7 @@ if (scrMode === "preview") {
     // first run: show the settings so people know it's there
     if (!fs.existsSync(configPath())) {
       saveConfig();
-      if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: true });
+      if (app.isPackaged && !STORE) app.setLoginItemSettings({ openAtLogin: true });
       refreshTrayMenu();
       openSettings();
     }

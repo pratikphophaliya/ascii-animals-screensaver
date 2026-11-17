@@ -44,12 +44,18 @@
       "artifactName": "ASCII-Animals-Setup-${version}.${ext}"
     },
     "appx": {
-      "identityName": "REPLACE_WITH_PARTNER_CENTER_IDENTITY",
-      "publisher": "CN=REPLACE_WITH_PARTNER_CENTER_PUBLISHER_ID",
-      "publisherDisplayName": "REPLACE_WITH_YOUR_PUBLISHER_NAME",
+      "identityName": "AlooIsTasty.ASCIIAnimals",
+      "publisher": "CN=2C5EE12C-17E8-4266-B6A8-CC194A781A71",
+      "publisherDisplayName": "AlooIsTasty",
       "displayName": "ASCII Animals",
       "applicationId": "AsciiAnimals",
-      "backgroundColor": "#0d1016"
+      "backgroundColor": "#0d1016",
+      "addAutoLaunchExtension": true,
+      "languages": [
+        "en-US"
+      ],
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.26100.0"
     },
     "publish": {
       "provider": "github",

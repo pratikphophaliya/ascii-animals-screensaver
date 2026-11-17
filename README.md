@@ -10,7 +10,7 @@ Like the old Windows screensavers, but calmer. Your desktop stays where you left
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows%2010%20%2F%2011-0078D4?style=for-the-badge&logo=windows&logoColor=white)](../../releases/latest)
 
-[![Latest release](https://img.shields.io/github/v/release/pratikphophaliya/ascii-animals-screensaver?label=latest&color=8b5cf6)](../../releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/pratikphophaliya/ascii-animals-screensaver?label=latest&color=8b5cf6&cacheSeconds=3600)](../../releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](LICENSE)
 ![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848F?logo=electron&logoColor=white)
 

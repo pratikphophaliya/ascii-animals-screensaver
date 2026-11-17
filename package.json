@@ -3,11 +3,11 @@
   "productName": "ASCII Animals",
   "version": "1.0.0",
   "description": "Pixel and ASCII animals wander across your desktop when you step away. A tiny screensaver for Windows.",
-  "author": "AlooIsTasty",
-  "homepage": "https://github.com/AlooIsTasty/ascii-animals-screensaver",
+  "author": "pratikphophaliya",
+  "homepage": "https://github.com/pratikphophaliya/ascii-animals-screensaver",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AlooIsTasty/ascii-animals-screensaver.git"
+    "url": "https://github.com/pratikphophaliya/ascii-animals-screensaver.git"
   },
   "main": "main.js",
   "license": "MIT",
@@ -54,7 +54,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "AlooIsTasty",
+      "owner": "pratikphophaliya",
       "repo": "ascii-animals-screensaver",
       "releaseType": "release"
     }

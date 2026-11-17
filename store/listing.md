@@ -16,14 +16,14 @@ Move the mouse or press any key and they're gone instantly.
 • Tweak speed, size, density, direction, sway and more
 • Choose how long you're idle before it starts (1 to 30 minutes)
 • Works across all your monitors
-• Waits while a full-screen video, game or presentation is playing
+• Waits while a video or music is playing, and during full-screen games and presentations
 • Lives quietly in the system tray and uses almost nothing while hidden
 • No account, no internet, no data collected
 
 Free and open source: https://github.com/pratikphophaliya/ascii-animals-screensaver
 
 ## What's new in this version
-First Microsoft Store release.
+First Microsoft Store release. Won't start while a video or music is playing.
 
 ## Product features (one per line, up to 20)
 Pixel animals drift over your desktop when you're idle
@@ -31,7 +31,7 @@ Seven animals, or rotate through all of them
 Animals in front stay sharp while the ones behind blur, with no overlapping
 Adjustable idle delay, speed, size, density and more
 Works on every monitor
-Pauses during full-screen video, games and presentations
+Waits while videos or music play, and during full-screen games
 No internet access and no data collected
 
 ## Search terms (up to 7)

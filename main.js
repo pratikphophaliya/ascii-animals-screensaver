@@ -120,18 +120,31 @@ ipcMain.on("saver:preview", () => {
 
 /* ---------- idle watcher ---------- */
 
-// Watching a movie or playing a game full-screen doesn't count as input, so ask Windows
-// whether a full-screen app or presentation is in front before covering the screen.
-// SHQueryUserNotificationState: 2 = busy (full-screen app), 3 = full-screen Direct3D, 4 = presentation mode.
-const BUSY_CHECK =
-  "Add-Type -Namespace W -Name N -MemberDefinition '[DllImport(\"shell32.dll\")] public static extern int SHQueryUserNotificationState(out int s);';" +
-  "$s = 0; [void][W.N]::SHQueryUserNotificationState([ref]$s); $s";
+// Watching a video doesn't count as keyboard/mouse input, so before covering the screen ask Windows:
+// 1. Is a full-screen app or presentation in front? SHQueryUserNotificationState:
+//    2 = busy (full-screen app), 3 = full-screen Direct3D, 4 = presentation mode.
+// 2. Is any media playing (a video in a browser window, a movie player, music)? Every player that
+//    shows up in Windows' media flyout reports its playback status there, and reading it needs no admin.
+const BUSY_CHECK = [
+  "$s = 0",
+  "try { Add-Type -Namespace W -Name N -MemberDefinition '[DllImport(\"shell32.dll\")] public static extern int SHQueryUserNotificationState(out int s);'; [void][W.N]::SHQueryUserNotificationState([ref]$s) } catch {}",
+  "$playing = 0",
+  "try {",
+  "  Add-Type -AssemblyName System.Runtime.WindowsRuntime",
+  "  $asTask = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' } | Select-Object -First 1",
+  "  $T = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime]",
+  "  $task = $asTask.MakeGenericMethod($T).Invoke($null, @($T::RequestAsync()))",
+  "  if ($task.Wait(5000)) { $playing = @($task.Result.GetSessions() | Where-Object { $_.GetPlaybackInfo().PlaybackStatus -eq 'Playing' }).Count }",
+  "} catch {}",
+  "\"$s $playing\"",
+].join("\n");
 
-function fullscreenAppInFront() {
+function busyWithSomething() {
   return new Promise((resolve) => {
     execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", BUSY_CHECK], { windowsHide: true, timeout: 15000 }, (err, stdout) => {
       if (err) return resolve(false); // if we can't tell, behave like a normal screensaver
-      resolve([2, 3, 4].includes(parseInt(String(stdout).trim(), 10)));
+      const [state, playing] = String(stdout).trim().split(/\s+/).map((n) => parseInt(n, 10));
+      resolve([2, 3, 4].includes(state) || playing > 0);
     });
   });
 }
@@ -144,7 +157,7 @@ function startIdleWatch() {
     const threshold = config.idleMinutes * 60;
     if (powerMonitor.getSystemIdleTime() < threshold) return; // seconds since last keyboard/mouse input
     checking = true;
-    const busy = await fullscreenAppInFront();
+    const busy = await busyWithSomething();
     checking = false;
     if (busy) {
       skipUntil = Date.now() + 30000; // look again in a bit

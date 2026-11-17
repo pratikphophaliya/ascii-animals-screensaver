@@ -26,7 +26,7 @@ Like the old Windows screensavers, but calmer. Your desktop stays where you left
 - **Has seven animals:** butterflies, koi, jellyfish, dragonflies, frogs, cranes and crabs. You can also have it rotate through all of them.
 - **Gets out of the way.** Move the mouse or press any key and it's gone instantly.
 - **Covers every monitor** at once.
-- **Waits during full-screen video, games and presentations.**
+- **Waits while videos or music are playing** and during full-screen games and presentations.
 - **Never touches the internet.** It makes no network requests and collects no data.
 
 ## Install
@@ -81,10 +81,10 @@ It only draws while it's showing. The rest of the time it's an idle tray icon th
 Yes. Open the install folder (`%LOCALAPPDATA%\Programs\ascii-animals-screensaver`) and make a copy of `ASCII Animals.exe` **in that same folder**, because it needs the files next to it. Rename the copy to `ASCII Animals.scr`, then right-click it and choose **Install**. It understands the standard `/s` (run) and `/c` (configure) switches. Most people won't need this, because the tray app does the same job.
 
 **Will it pop up while I'm watching a video?**
-Not while a video, game or presentation is **full-screen**: it checks for that first and waits. A video playing in a normal, non-full-screen window doesn't count as activity, though, so it can start over one. Use **Enabled** in the tray menu to pause it.
+No. Before starting, it checks whether any video or music is playing (anything that shows up in Windows' volume/media flyout, like a browser tab, a movie player or Spotify) and whether a full-screen game or presentation is in front. If so, it waits and checks again every 30 seconds. Pause the video and it starts as usual.
 
 **It doesn't start when I'm idle.**
-Check that **Enabled** is ticked in the tray menu, and that "Start after" is shorter than your screen-off time (see the tip above). It also waits while a full-screen app is in front.
+Check that **Enabled** is ticked in the tray menu, and that "Start after" is shorter than your screen-off time (see the tip above). It also waits while a video or music is playing, or a full-screen app is in front.
 
 ## Build from source
 

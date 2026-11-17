@@ -1315,8 +1315,15 @@ function drawRipples(half) {
   }
 }
 
+// High-refresh laptop screens (120/144 Hz) would otherwise redraw 144 times a second.
+// Slow pixel animals look the same at 30 fps, at a fraction of the CPU/GPU cost.
+const FRAME_MS = 1000 / (OVERLAY ? 30 : 60);
 let last = 0;
 function frame(now) {
+  if (last && now - last < FRAME_MS - 2) {
+    requestAnimationFrame(frame);
+    return;
+  }
   const dt = last ? clamp((now - last) / 1000, 0, 0.05) : 0.016;
   last = now;
   step(dt);

@@ -15,7 +15,7 @@
     "start": "electron .",
     "preview": "electron . /s",
     "dist": "electron-builder --win nsis",
-    "dist:store": "electron-builder --win appx"
+    "dist:store": "node scripts/build-store.js"
   },
   "devDependencies": {
     "electron": "^45.3.3",
@@ -44,9 +44,6 @@
       "artifactName": "ASCII-Animals-Setup-${version}.${ext}"
     },
     "appx": {
-      "identityName": "AlooIsTasty.ASCIIAnimals",
-      "publisher": "CN=2C5EE12C-17E8-4266-B6A8-CC194A781A71",
-      "publisherDisplayName": "AlooIsTasty",
       "displayName": "ASCII Animals",
       "applicationId": "AsciiAnimals",
       "backgroundColor": "#0d1016",

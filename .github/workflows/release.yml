@@ -4,7 +4,6 @@ name: Release
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,7 +21,17 @@ jobs:
 
       - run: npm ci
 
-      - name: Build installer and publish the release
-        run: npx electron-builder --win nsis --publish always
+      # Build only. Publishing from electron-builder uploads files in parallel,
+      # which can create duplicate releases for the same tag.
+      - name: Build installer
+        run: npx electron-builder --win nsis --publish never
+
+      # One step creates the release and attaches the installer.
+      - name: Create GitHub release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/ASCII-Animals-Setup-*.exe \
+            --title "ASCII Animals ${GITHUB_REF_NAME#v}" \
+            --generate-notes

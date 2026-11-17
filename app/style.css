@@ -1,0 +1,675 @@
+@font-face {
+  font-family: "Geist";
+  src: url("fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+:root {
+  --bg: #0a0c11;
+  --text: #eef1f7;
+  --muted: rgba(226, 232, 245, 0.56);
+  --faint: rgba(226, 232, 245, 0.34);
+  --line: rgba(255, 255, 255, 0.085);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --accent: rgb(50, 135, 255);
+  --glass-bg: rgba(16, 19, 27, 0.5);
+  --blur: 3.5px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#back,
+#world,
+#bokeh {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  pointer-events: none;
+}
+
+#bokeh {
+  filter: blur(10px);
+  opacity: 0.6;
+}
+
+/* ---------- Glass ---------- */
+
+.glass {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(var(--blur)) url(#glass-warp) saturate(1.35) brightness(0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 10px 40px -12px rgba(0, 0, 0, 0.7),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5);
+}
+
+.glass::before {
+  /* soft sheen along the top edge */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 38%);
+}
+
+/* ---------- Top bar ---------- */
+
+.top-bar {
+  position: fixed;
+  top: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.picker {
+  pointer-events: auto;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.picker .thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  transition:
+    translate 380ms cubic-bezier(0.3, 1.25, 0.5, 1),
+    width 380ms cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+.picker button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 11px 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 450;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  transition: color 160ms ease;
+}
+
+.picker button:hover {
+  color: rgba(238, 241, 247, 0.85);
+}
+
+.picker button[aria-checked="true"] {
+  color: var(--text);
+}
+
+.picker button:focus-visible,
+.tweaks-toggle:focus-visible,
+.pill:focus-visible,
+.send:focus-visible,
+.shortcut:focus-visible {
+  outline: 2px solid rgba(120, 170, 255, 0.7);
+  outline-offset: 1px;
+}
+
+.picker .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0 6px var(--swatch);
+}
+
+.tweaks-toggle {
+  pointer-events: auto;
+  position: absolute;
+  right: 14px;
+  top: 0;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  color: rgba(238, 241, 247, 0.82);
+  font-size: 12.5px;
+  font-weight: 450;
+  box-sizing: content-box;
+  border-width: 1px;
+}
+
+.tweaks-toggle:hover,
+.tweaks-toggle[aria-expanded="true"] {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+/* ---------- Stage ---------- */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 9vh;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.clock {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.9);
+  min-height: 1em;
+}
+
+.greeting {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 450;
+  letter-spacing: -0.018em;
+  color: var(--text);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.7),
+    0 2px 24px rgba(0, 0, 0, 0.85);
+}
+
+.composer {
+  pointer-events: auto;
+  width: min(720px, calc(100vw - 32px));
+  border-radius: 24px;
+  padding: 0 12px 12px;
+}
+
+.composer:focus-within {
+  border-color: var(--line-strong);
+}
+
+.composer-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 6px 0 5px;
+}
+
+.composer-icon {
+  flex: none;
+  color: var(--muted);
+}
+
+#query {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-size: 15.5px;
+  letter-spacing: -0.005em;
+}
+
+#query::placeholder {
+  color: var(--muted);
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.shortcuts {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+
+.shortcut {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  max-width: 168px;
+  padding: 0 11px 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(238, 241, 247, 0.82);
+  font-size: 12.5px;
+  text-decoration: none;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.shortcut:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.shortcut img {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 3px;
+}
+
+.shortcut span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.send {
+  flex: none;
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.send:disabled {
+  cursor: default;
+  color: var(--faint);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.send:not(:disabled) {
+  background: var(--text);
+  color: #0b0d12;
+  border-color: transparent;
+}
+
+/* ---------- Hint ---------- */
+
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  margin: 0;
+  translate: -50% 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(10, 12, 17, 0.55);
+  border: 1px solid var(--line);
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  transition:
+    opacity 420ms ease,
+    translate 420ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.hint.show {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.hint:empty {
+  display: none;
+}
+
+/* ---------- Tweaks ---------- */
+
+.tweaks {
+  position: fixed;
+  top: 52px;
+  right: 14px;
+  width: 268px;
+  max-height: calc(100vh - 66px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  z-index: 6;
+  --glass-bg: rgba(14, 16, 23, 0.72);
+  --blur: 14px;
+  animation: tweaks-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.tweaks[hidden] {
+  display: none;
+}
+
+@keyframes tweaks-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+}
+
+.tweaks-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tweaks-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.tweaks-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pill {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  color: rgba(238, 241, 247, 0.85);
+}
+
+.pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.pill.icon {
+  width: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.tweaks-body {
+  overflow-y: auto;
+  padding: 4px 16px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+.tweaks-section {
+  margin: 14px 0 4px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.control {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  row-gap: 7px;
+  padding: 8px 0 4px;
+}
+
+.control label {
+  font-size: 12.5px;
+  color: rgba(238, 241, 247, 0.86);
+}
+
+.control output {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.control input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.control input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0 var(--p, 50%),
+    rgba(255, 255, 255, 0.12) var(--p, 50%) 100%
+  );
+}
+
+.control input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.control input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid rgba(120, 170, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.control input[type="text"] {
+  grid-column: 1 / -1;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  outline: 0;
+  font-size: 13px;
+}
+
+.control input[type="text"]:focus {
+  border-color: rgba(120, 170, 255, 0.55);
+}
+
+.control.switch {
+  padding: 9px 0 5px;
+}
+
+.toggle {
+  position: relative;
+  width: 30px;
+  height: 18px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background 160ms ease;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: translate 180ms cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+
+.toggle[aria-checked="true"] {
+  background: var(--accent);
+}
+
+.toggle[aria-checked="true"]::after {
+  translate: 12px 0;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid rgba(120, 170, 255, 0.7);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .picker button {
+    padding: 0 8px;
+  }
+  .picker button span:last-child {
+    display: none;
+  }
+  .picker button .dot {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+@media (max-height: 520px) {
+  .stage {
+    padding-bottom: 0;
+  }
+  .masthead {
+    margin-bottom: 16px;
+  }
+}
+
+/* ---------- Desktop app modes ---------- */
+
+/* No browser search or top sites in the desktop app. */
+.composer {
+  display: none !important;
+}
+
+/* Screensaver: just the animals. No cursor, no chrome. */
+html[data-mode="saver"],
+html[data-mode="saver"] * {
+  cursor: none !important;
+}
+html[data-mode="saver"] .top-bar,
+html[data-mode="saver"] .tweaks,
+html[data-mode="saver"] #bokeh,
+html[data-mode="saver"] .hint {
+  display: none !important;
+}
+/* The screensaver window is transparent: the user's desktop shows through. */
+html[data-mode="saver"],
+html[data-mode="saver"] body {
+  background: transparent !important;
+}
+html[data-mode="saver"] .stage {
+  display: none !important;
+}
+
+/* Back layer: smaller, softer animals behind the sharp ones. Only used by the screensaver. */
+#back {
+  display: none;
+}
+html[data-mode="saver"] #back {
+  display: block;
+  filter: blur(3px);
+  opacity: 0.8;
+}
+
+/* Settings window: a small banner explaining what this is. */
+.app-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  translate: -50% 0;
+  z-index: 5;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.app-banner button {
+  margin-left: 10px;
+}
+html[data-mode="saver"] .app-banner {
+  display: none;
+}

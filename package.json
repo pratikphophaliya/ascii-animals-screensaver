@@ -1,0 +1,62 @@
+{
+  "name": "ascii-animals-screensaver",
+  "productName": "ASCII Animals",
+  "version": "1.0.0",
+  "description": "Pixel and ASCII animals wander across your desktop when you step away. A tiny screensaver for Windows.",
+  "author": "AlooIsTasty",
+  "homepage": "https://github.com/AlooIsTasty/ascii-animals-screensaver",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlooIsTasty/ascii-animals-screensaver.git"
+  },
+  "main": "main.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "preview": "electron . /s",
+    "dist": "electron-builder --win nsis",
+    "dist:store": "electron-builder --win appx",
+    "release": "electron-builder --win nsis --publish always"
+  },
+  "devDependencies": {
+    "electron": "^45.3.3",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.asciianimals.screensaver",
+    "productName": "ASCII Animals",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "LICENSE"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "artifactName": "ASCII-Animals-Setup-${version}.${ext}"
+    },
+    "appx": {
+      "identityName": "REPLACE_WITH_PARTNER_CENTER_IDENTITY",
+      "publisher": "CN=REPLACE_WITH_PARTNER_CENTER_PUBLISHER_ID",
+      "publisherDisplayName": "REPLACE_WITH_YOUR_PUBLISHER_NAME",
+      "displayName": "ASCII Animals",
+      "applicationId": "AsciiAnimals",
+      "backgroundColor": "#0d1016"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "AlooIsTasty",
+      "repo": "ascii-animals-screensaver",
+      "releaseType": "release"
+    }
+  }
+}

@@ -580,6 +580,9 @@ const R = {
 };
 R.loCtx = R.lo.getContext("2d");
 R.bloCtx = R.blo.getContext("2d");
+const BACK_SCALE = 3;
+R.backScratch = document.createElement("canvas");
+const scratchCtx = R.backScratch.getContext("2d");
 
 function resize() {
   R.dpr = window.devicePixelRatio || 1;
@@ -590,10 +593,15 @@ function resize() {
   R.cols = Math.ceil(R.W / R.cell) + 1;
   R.rows = Math.ceil(R.H / R.cell) + 1;
 
-  for (const c of [world, bokehCanvas, backCanvas]) {
+  for (const c of [world, bokehCanvas]) {
     c.width = R.W;
     c.height = R.H;
   }
+  // The back layer is blurry anyway: render it at 1/BACK_SCALE size and let CSS stretch it.
+  // Blurring 1/9 of the pixels in the canvas is far cheaper than a full-screen CSS blur every frame.
+  const bs = OVERLAY ? BACK_SCALE : R.W;
+  backCanvas.width = R.backScratch.width = Math.ceil(R.W / bs);
+  backCanvas.height = R.backScratch.height = Math.ceil(R.H / bs);
 
   R.lo.width = R.blo.width = R.cols;
   R.lo.height = R.blo.height = R.rows;
@@ -1029,6 +1037,21 @@ function separateLayers(dt) {
 /* ---------- drawing ---------- */
 
 const glyphs = [];
+// cells touched by rasterize() since the last resetBox(): only this part of the screen gets redrawn
+const box = { i0: 0, j0: 0, i1: -1, j1: -1 };
+function resetBox() {
+  box.i0 = box.j0 = 1e9;
+  box.i1 = box.j1 = -1;
+}
+
+// Setting a new rgba() string per glyph makes the canvas parse a color every call.
+// Keep the color as rgb() (usually the same for a whole animal) and vary globalAlpha instead.
+let lastFill = "";
+function glyphFill(g, r, gr, b, a) {
+  const s = `rgb(${r | 0},${gr | 0},${b | 0})`;
+  if (s !== lastFill) g.fillStyle = lastFill = s;
+  g.globalAlpha = clamp(a, 0, 1); // out-of-range values are silently ignored
+}
 
 function rasterize(e, order, buf, transparentBg) {
   const A = e.A;
@@ -1041,6 +1064,10 @@ function rasterize(e, order, buf, transparentBg) {
   const j0 = Math.max(0, Math.floor(cy - rad));
   const j1 = Math.min(R.rows - 1, Math.ceil(cy + rad));
   if (i0 > i1 || j0 > j1) return;
+  if (i0 < box.i0) box.i0 = i0;
+  if (j0 < box.j0) box.j0 = j0;
+  if (i1 > box.i1) box.i1 = i1;
+  if (j1 > box.j1) box.j1 = j1;
 
   const ang = e.heading + (A.facing || 0);
   const cs = Math.cos(ang) / k;
@@ -1150,27 +1177,38 @@ function renderOverlay(dt) {
   const sorted = entities.slice().sort((a, b) => a.z - b.z);
   const half = R.cell / 2 + R.line / 2;
   const A = ANIMAL_BY_ID[current];
+  const c = R.cell;
   for (const layer of [BACK, FRONT]) {
-    const g = layer === BACK ? backCtx : ctx;
+    // back layer: drawn small into the scratch canvas, then blurred onto the (also small) back canvas
+    const g = layer === BACK ? scratchCtx : ctx;
     const buf = R.buf;
     buf.fill(0);
     R.occ.fill(-1);
     glyphs.length = 0;
+    resetBox();
     for (let n = 0; n < sorted.length; n++) {
       const e = sorted[n];
       if (layerOf(e) !== layer) continue;
       rasterize(e, n, buf, false);
       if (layer === FRONT) emitTrails(e, dt);
     }
-    R.loCtx.putImageData(R.img, 0, 0);
+    if (layer === BACK) g.setTransform(1 / BACK_SCALE, 0, 0, 1 / BACK_SCALE, 0, 0);
     g.clearRect(0, 0, R.W, R.H);
-    g.imageSmoothingEnabled = false;
-    g.drawImage(R.lo, 0, 0, R.cols * R.cell, R.rows * R.cell);
-    if (layer === FRONT) {
-      // thin gaps between cells keep the pixel look over the desktop
-      g.globalCompositeOperation = "destination-out";
-      g.drawImage(R.overlay, 0, 0);
-      g.globalCompositeOperation = "source-over";
+    g.globalAlpha = 1;
+    lastFill = "";
+    if (box.i1 >= box.i0) {
+      // only upload and scale up the cells the animals actually cover, not the whole screen
+      const bw = box.i1 - box.i0 + 1;
+      const bh = box.j1 - box.j0 + 1;
+      R.loCtx.putImageData(R.img, 0, 0, box.i0, box.j0, bw, bh);
+      g.imageSmoothingEnabled = false;
+      g.drawImage(R.lo, box.i0, box.j0, bw, bh, box.i0 * c, box.j0 * c, bw * c, bh * c);
+      if (layer === FRONT) {
+        // thin gaps between cells keep the pixel look over the desktop
+        g.globalCompositeOperation = "destination-out";
+        g.drawImage(R.overlay, box.i0 * c, box.j0 * c, bw * c, bh * c, box.i0 * c, box.j0 * c, bw * c, bh * c);
+        g.globalCompositeOperation = "source-over";
+      }
     }
     g.font = R.font;
     g.textAlign = "center";
@@ -1185,16 +1223,23 @@ function renderOverlay(dt) {
         const nl = l - decay;
         life[idx] = nl;
         if (nl <= 0.02 || R.occ[idx] >= 0) continue;
-        g.fillStyle = `rgba(${R.tCol[idx * 3]},${R.tCol[idx * 3 + 1]},${R.tCol[idx * 3 + 2]},${(nl * 0.55).toFixed(3)})`;
-        g.fillText(trailChars[R.tChar[idx] % trailChars.length], (idx % R.cols) * R.cell + half, ((idx / R.cols) | 0) * R.cell + half);
+        glyphFill(g, R.tCol[idx * 3], R.tCol[idx * 3 + 1], R.tCol[idx * 3 + 2], nl * 0.55);
+        g.fillText(trailChars[R.tChar[idx] % trailChars.length], (idx % R.cols) * c + half, ((idx / R.cols) | 0) * c + half);
       }
     }
     for (let q = 0; q < glyphs.length; q += 8) {
       const i = glyphs[q];
       const j = glyphs[q + 1];
       if (R.occ[j * R.cols + i] > glyphs[q + 2]) continue;
-      g.fillStyle = `rgba(${glyphs[q + 3] | 0},${glyphs[q + 4] | 0},${glyphs[q + 5] | 0},${glyphs[q + 6].toFixed(3)})`;
-      g.fillText(glyphs[q + 7], i * R.cell + half, j * R.cell + half);
+      glyphFill(g, glyphs[q + 3], glyphs[q + 4], glyphs[q + 5], glyphs[q + 6]);
+      g.fillText(glyphs[q + 7], i * c + half, j * c + half);
+    }
+    g.globalAlpha = 1;
+    if (layer === BACK) {
+      backCtx.clearRect(0, 0, backCanvas.width, backCanvas.height);
+      backCtx.filter = `blur(${((3 * R.dpr) / BACK_SCALE).toFixed(2)}px)`;
+      backCtx.globalAlpha = 0.8;
+      backCtx.drawImage(R.backScratch, 0, 0);
     }
   }
 }
@@ -1328,7 +1373,10 @@ function frame(now) {
   last = now;
   step(dt);
   render(dt);
-  requestAnimationFrame(frame);
+  // Sleep until the next frame is nearly due instead of waking on every 144 Hz vsync just to skip it.
+  const wait = FRAME_MS - (performance.now() - now) - 6;
+  if (wait > 1) setTimeout(() => requestAnimationFrame(frame), wait);
+  else requestAnimationFrame(frame);
 }
 
 /* =========================================================================

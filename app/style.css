@@ -649,9 +649,8 @@ html[data-mode="saver"] .stage {
   display: none;
 }
 html[data-mode="saver"] #back {
+  /* drawn at 1/3 size and already blurred + faded in the canvas (see renderOverlay) */
   display: block;
-  filter: blur(3px);
-  opacity: 0.8;
 }
 
 /* Settings window: a small banner explaining what this is. */
